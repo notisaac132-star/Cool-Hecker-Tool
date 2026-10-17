@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CipherQuest</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header id="topbar">
+      <div class="brand">
+        <span class="logo">◈</span> CipherQuest
+        <span class="tag">// training simulation</span>
+      </div>
+      <div class="stats">
+        <span class="stat">RANK <b id="rank">Script Kiddie</b></span>
+        <span class="stat">XP <b id="xp">0</b></span>
+        <span class="stat">QUESTS <b id="done">0</b>/<span id="total">0</span></span>
+      </div>
+    </header>
+
+    <main id="main">
+      <aside id="sidebar">
+        <div class="panel-title">MISSIONS</div>
+        <ul id="quest-list"></ul>
+        <div class="sandbox-note">
+          🛡️ Everything here is a <b>simulation</b>. No real networks,
+          devices, or accounts exist in this game. Every target is fictional
+          and runs entirely on your machine.
+        </div>
+      </aside>
+
+      <section id="terminal-wrap">
+        <div id="terminal" aria-live="polite"></div>
+        <form id="input-line" autocomplete="off">
+          <span class="prompt" id="prompt-label">guest@cipherquest:~$</span>
+          <input id="cmd" type="text" spellcheck="false"
+                 autocapitalize="off" autocomplete="off" placeholder="type 'help' to begin" />
+        </form>
+      </section>
+    </main>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

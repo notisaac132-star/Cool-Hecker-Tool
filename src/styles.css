@@ -1,0 +1,122 @@
+:root {
+  --bg: #0a0e14;
+  --panel: #0f1621;
+  --panel-2: #131c2b;
+  --line: #1e2b3f;
+  --text: #c6d4e6;
+  --dim: #6b7f99;
+  --green: #4ee07a;
+  --cyan: #4bd6e0;
+  --amber: #f2c14e;
+  --red: #f26d6d;
+  --accent: #7aa2ff;
+  --mono: "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  overflow: hidden;
+  user-select: none;
+}
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* top bar */
+#topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #0f1826, #0b1119);
+  border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 700; letter-spacing: .5px; }
+.brand .logo { color: var(--green); }
+.brand .tag { color: var(--dim); font-weight: 400; margin-left: 6px; font-size: 12px; }
+.stats { display: flex; gap: 18px; font-size: 12px; color: var(--dim); }
+.stats b { color: var(--cyan); }
+
+/* layout */
+#main { flex: 1; display: flex; min-height: 0; }
+
+#sidebar {
+  width: 290px; flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 14px;
+  overflow-y: auto;
+}
+.panel-title { color: var(--dim); font-size: 11px; letter-spacing: 2px; margin-bottom: 10px; }
+#quest-list { list-style: none; margin: 0; padding: 0; }
+#quest-list li {
+  padding: 10px 11px; margin-bottom: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+#quest-list li:hover { border-left-color: var(--accent); background: #16202f; }
+#quest-list li.done { border-left-color: var(--green); opacity: .7; }
+#quest-list li.locked { opacity: .4; cursor: not-allowed; }
+#quest-list li .q-title { font-size: 13px; font-weight: 600; }
+#quest-list li .q-sub { font-size: 11px; color: var(--dim); margin-top: 3px; }
+#quest-list li .q-badge { float: right; font-size: 11px; color: var(--amber); }
+#quest-list li.done .q-badge { color: var(--green); }
+
+.sandbox-note {
+  margin-top: 16px; padding: 11px;
+  font-size: 11px; line-height: 1.5; color: var(--dim);
+  background: #0c141e; border: 1px dashed var(--line); border-radius: 6px;
+}
+.sandbox-note b { color: var(--text); }
+
+/* terminal */
+#terminal-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#terminal {
+  flex: 1; overflow-y: auto; padding: 16px 18px;
+  line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+  user-select: text;
+}
+#terminal .l { margin: 0; }
+#terminal .sys { color: var(--dim); }
+#terminal .ok { color: var(--green); }
+#terminal .warn { color: var(--amber); }
+#terminal .err { color: var(--red); }
+#terminal .hi { color: var(--cyan); }
+#terminal .accent { color: var(--accent); }
+#terminal .you { color: var(--text); }
+#terminal .you::before { content: "› "; color: var(--green); }
+#terminal .box {
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 12px; margin: 6px 0; background: #0c141e;
+}
+#terminal .debrief { border-color: #2a4a5a; background: #0b1a20; }
+#terminal .debrief .h { color: var(--cyan); font-weight: 700; }
+
+#input-line {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 16px; border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.prompt { color: var(--green); white-space: nowrap; }
+#cmd {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--text); font-family: var(--mono); font-size: 14px;
+  user-select: text;
+}
+#cmd::placeholder { color: var(--dim); }
+
+/* scrollbars */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: #1d2a3d; border-radius: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.blink { animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }

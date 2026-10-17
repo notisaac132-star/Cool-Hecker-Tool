@@ -1,0 +1,55 @@
+name: Build installers
+
+# Builds real distributables on native runners:
+#   - macOS runner  -> .dmg (Intel + Apple Silicon)
+#   - Windows runner -> NSIS .exe installer + portable .exe
+# Push a tag like v1.0.0 to produce a GitHub Release with the files attached.
+# You can also run it manually from the Actions tab (workflow_dispatch) to get
+# the installers as downloadable build artifacts without cutting a release.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to create/update the Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: windows-latest
+            platform: win
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build (${{ matrix.platform }})
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --${{ matrix.platform }} --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cipherquest-${{ matrix.platform }}
+          path: |
+            dist/*.dmg
+            dist/*.exe
+          if-no-files-found: ignore

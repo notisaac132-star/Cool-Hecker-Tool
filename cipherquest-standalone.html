@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CipherQuest</title>
+  <style>
+:root {
+  --bg: #0a0e14;
+  --panel: #0f1621;
+  --panel-2: #131c2b;
+  --line: #1e2b3f;
+  --text: #c6d4e6;
+  --dim: #6b7f99;
+  --green: #4ee07a;
+  --cyan: #4bd6e0;
+  --amber: #f2c14e;
+  --red: #f26d6d;
+  --accent: #7aa2ff;
+  --mono: "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  overflow: hidden;
+  user-select: none;
+}
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* top bar */
+#topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #0f1826, #0b1119);
+  border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 700; letter-spacing: .5px; }
+.brand .logo { color: var(--green); }
+.brand .tag { color: var(--dim); font-weight: 400; margin-left: 6px; font-size: 12px; }
+.stats { display: flex; gap: 18px; font-size: 12px; color: var(--dim); }
+.stats b { color: var(--cyan); }
+
+/* layout */
+#main { flex: 1; display: flex; min-height: 0; }
+
+#sidebar {
+  width: 290px; flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 14px;
+  overflow-y: auto;
+}
+.panel-title { color: var(--dim); font-size: 11px; letter-spacing: 2px; margin-bottom: 10px; }
+#quest-list { list-style: none; margin: 0; padding: 0; }
+#quest-list li {
+  padding: 10px 11px; margin-bottom: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+#quest-list li:hover { border-left-color: var(--accent); background: #16202f; }
+#quest-list li.done { border-left-color: var(--green); opacity: .7; }
+#quest-list li.locked { opacity: .4; cursor: not-allowed; }
+#quest-list li .q-title { font-size: 13px; font-weight: 600; }
+#quest-list li .q-sub { font-size: 11px; color: var(--dim); margin-top: 3px; }
+#quest-list li .q-badge { float: right; font-size: 11px; color: var(--amber); }
+#quest-list li.done .q-badge { color: var(--green); }
+
+.sandbox-note {
+  margin-top: 16px; padding: 11px;
+  font-size: 11px; line-height: 1.5; color: var(--dim);
+  background: #0c141e; border: 1px dashed var(--line); border-radius: 6px;
+}
+.sandbox-note b { color: var(--text); }
+
+/* terminal */
+#terminal-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#terminal {
+  flex: 1; overflow-y: auto; padding: 16px 18px;
+  line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+  user-select: text;
+}
+#terminal .l { margin: 0; }
+#terminal .sys { color: var(--dim); }
+#terminal .ok { color: var(--green); }
+#terminal .warn { color: var(--amber); }
+#terminal .err { color: var(--red); }
+#terminal .hi { color: var(--cyan); }
+#terminal .accent { color: var(--accent); }
+#terminal .you { color: var(--text); }
+#terminal .you::before { content: "› "; color: var(--green); }
+#terminal .box {
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 12px; margin: 6px 0; background: #0c141e;
+}
+#terminal .debrief { border-color: #2a4a5a; background: #0b1a20; }
+#terminal .debrief .h { color: var(--cyan); font-weight: 700; }
+
+#input-line {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 16px; border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.prompt { color: var(--green); white-space: nowrap; }
+#cmd {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--text); font-family: var(--mono); font-size: 14px;
+  user-select: text;
+}
+#cmd::placeholder { color: var(--dim); }
+
+/* scrollbars */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: #1d2a3d; border-radius: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.blink { animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+</style>
+</head>
+<body>
+  <div id="app">
+    <header id="topbar">
+      <div class="brand">
+        <span class="logo">◈</span> CipherQuest
+        <span class="tag">// training simulation</span>
+      </div>
+      <div class="stats">
+        <span class="stat">RANK <b id="rank">Script Kiddie</b></span>
+        <span class="stat">XP <b id="xp">0</b></span>
+        <span class="stat">QUESTS <b id="done">0</b>/<span id="total">0</span></span>
+      </div>
+    </header>
+
+    <main id="main">
+      <aside id="sidebar">
+        <div class="panel-title">MISSIONS</div>
+        <ul id="quest-list"></ul>
+        <div class="sandbox-note">
+          🛡️ Everything here is a <b>simulation</b>. No real networks,
+          devices, or accounts exist in this game. Every target is fictional
+          and runs entirely on your machine.
+        </div>
+      </aside>
+
+      <section id="terminal-wrap">
+        <div id="terminal" aria-live="polite"></div>
+        <form id="input-line" autocomplete="off">
+          <span class="prompt" id="prompt-label">guest@cipherquest:~$</span>
+          <input id="cmd" type="text" spellcheck="false"
+                 autocapitalize="off" autocomplete="off" placeholder="type 'help' to begin" />
+        </form>
+      </section>
+    </main>
+  </div>
+  <script>
+/* CipherQuest — a fully simulated cybersecurity training game.
+ *
+ * SAFETY / DESIGN NOTE:
+ * Nothing in this file touches a real network, device, filesystem, or account.
+ * Every "target" (WiFi, inbox, server, database) is fictional data defined
+ * right here in memory. The point of the game is to teach how attacks work
+ * conceptually AND how to defend against them — the way Hacknet, picoCTF, or
+ * TryHackMe do — without ever pointing a tool at the real world.
+ */
+
+(() => {
+  "use strict";
+
+  // ---------- tiny DOM helpers ----------
+  const term = document.getElementById("terminal");
+  const input = document.getElementById("cmd");
+  const form = document.getElementById("input-line");
+  const promptLabel = document.getElementById("prompt-label");
+  const questListEl = document.getElementById("quest-list");
+  const xpEl = document.getElementById("xp");
+  const rankEl = document.getElementById("rank");
+  const doneEl = document.getElementById("done");
+  const totalEl = document.getElementById("total");
+
+  function print(text = "", cls = "") {
+    const p = document.createElement("p");
+    p.className = "l " + cls;
+    p.textContent = text;
+    term.appendChild(p);
+    term.scrollTop = term.scrollHeight;
+    return p;
+  }
+  function printHTML(html, cls = "box") {
+    const d = document.createElement("div");
+    d.className = "l " + cls;
+    d.innerHTML = html;
+    term.appendChild(d);
+    term.scrollTop = term.scrollHeight;
+    return d;
+  }
+  function echo(cmd) { print(cmd, "you"); }
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+  async function type(lines, cls = "sys", delay = 180) {
+    for (const ln of lines) { print(ln, cls); await sleep(delay); }
+  }
+
+  // ---------- game state ----------
+  const RANKS = [
+    [0, "Script Kiddie"],
+    [100, "Pentester (Intern)"],
+    [250, "Security Analyst"],
+    [450, "Red Teamer"],
+    [700, "Ethical Hacker"],
+    [1000, "Cyber Guardian"]
+  ];
+
+  const state = {
+    xp: 0,
+    completed: new Set(),
+    active: null,          // active quest id
+    handler: null          // active quest's input handler
+  };
+
+  function rankFor(xp) {
+    let r = RANKS[0][1];
+    for (const [need, name] of RANKS) if (xp >= need) r = name;
+    return r;
+  }
+
+  function addXP(n) {
+    state.xp += n;
+    print(`+${n} XP`, "accent");
+    refreshHUD();
+  }
+
+  function refreshHUD() {
+    xpEl.textContent = state.xp;
+    rankEl.textContent = rankFor(state.xp);
+    doneEl.textContent = state.completed.size;
+    totalEl.textContent = QUESTS.length;
+  }
+
+  function isUnlocked(q) {
+    return !q.requires || q.requires.every((r) => state.completed.has(r));
+  }
+
+  function completeQuest(id, xp) {
+    if (!state.completed.has(id)) {
+      state.completed.add(id);
+      addXP(xp);
+      print(`✔ MISSION COMPLETE: ${QUESTS.find((q) => q.id === id).title}`, "ok");
+    }
+    state.active = null;
+    state.handler = null;
+    setPrompt("guest@cipherquest:~$");
+    renderQuests();
+    const next = QUESTS.find((q) => !state.completed.has(q.id) && isUnlocked(q));
+    if (next) print(`New mission available: "${next.title}" — type: accept ${next.id}`, "hi");
+    else print("All missions cleared. You've earned the rank of Cyber Guardian. 🛡️", "ok");
+  }
+
+  function setPrompt(txt) { promptLabel.textContent = txt; }
+
+  // ---------- quest sidebar ----------
+  function renderQuests() {
+    questListEl.innerHTML = "";
+    QUESTS.forEach((q) => {
+      const li = document.createElement("li");
+      const done = state.completed.has(q.id);
+      const locked = !isUnlocked(q) && !done;
+      li.className = (done ? "done " : "") + (locked ? "locked" : "");
+      li.innerHTML =
+        `<span class="q-badge">${done ? "✔ " + q.xp + "xp" : locked ? "🔒" : q.xp + "xp"}</span>` +
+        `<div class="q-title">${esc(q.title)}</div>` +
+        `<div class="q-sub">${esc(q.sub)}</div>`;
+      if (!locked) li.onclick = () => runCommand("accept " + q.id);
+      questListEl.appendChild(li);
+    });
+    refreshHUD();
+  }
+
+  // ========================================================================
+  //  QUESTS — each target is fictional data defined inline.
+  // ========================================================================
+  const QUESTS = [
+    // ---- 1. Tutorial -----------------------------------------------------
+    {
+      id: "handshake",
+      title: "First Handshake",
+      sub: "Learn the console",
+      concept: "Recon / situational awareness",
+      xp: 50,
+      start: async () => {
+        await type([
+          "MISSION 01 — First Handshake",
+          "Welcome to the CipherQuest training range. Before you touch a",
+          "target, you learn to look. Good security work is 90% recon.",
+          ""
+        ]);
+        print("Type  scan  to map the practice lab network.", "hi");
+        state.handler = async (cmd) => {
+          if (cmd === "scan") {
+            await type([
+              "scanning 10.0.0.0/24 (simulated lab) ...",
+            ], "sys", 300);
+            printHTML(
+              "<b>Discovered hosts (all simulated):</b><br>" +
+              "10.0.0.5   iot-cam-01     &lt;admin panel&gt;<br>" +
+              "10.0.0.9   shop.local     &lt;web app&gt;<br>" +
+              "10.0.0.20  mail-gw        &lt;mail gateway&gt;<br>" +
+              "ap:MayaCafe  WiFi AP       &lt;WPA2&gt;"
+            );
+            print("Nice. You can always run  scan  again from the lobby.", "ok");
+            debrief([
+              "Recon is legal and ethical only on systems you own or are",
+              "authorized to test. Here, everything is a simulation you 'own'.",
+              "Real-world lesson: unauthorized scanning of others' networks is",
+              "a crime in most places (e.g. CFAA in the US). Get written scope."
+            ]);
+            completeQuest("handshake", 50);
+          } else {
+            print("For this mission, just run:  scan", "warn");
+          }
+        };
+      }
+    },
+
+    // ---- 2. WiFi / WPA2 --------------------------------------------------
+    {
+      id: "wifi",
+      title: "Maya's Café WiFi",
+      sub: "WPA2 & why weak passphrases fall",
+      concept: "Wireless auth, dictionary attacks, passphrase entropy",
+      xp: 120,
+      requires: ["handshake"],
+      _s: {},
+      start: async function () {
+        this._s = { captured: false };
+        await type([
+          "MISSION 02 — Maya's Café WiFi  (authorized recovery)",
+          "",
+          'Maya owns "MayaCafe" and is locked out of HER OWN router. She',
+          "has given you written permission to recover the Wi-Fi passphrase.",
+          "(In this sim, you only ever act on targets you're allowed to.)",
+          ""
+        ]);
+        print("Steps:  capture   →   wordlist   →   crack <list>", "hi");
+        state.handler = async (cmd) => {
+          const s = QUESTS.find((q) => q.id === "wifi")._s;
+          if (cmd === "capture") {
+            await type([
+              "listening on ap:MayaCafe ...",
+              "waiting for a device to (re)join ...",
+              "captured 4-way WPA2 handshake  [MayaCafe.hcap] (simulated)"
+            ], "sys", 450);
+            s.captured = true;
+            print("Now you have the handshake. Try:  wordlist", "ok");
+          } else if (cmd === "wordlist") {
+            printHTML(
+              "<b>Available wordlists (simulated):</b><br>" +
+              "tiny     — 12 very common passwords<br>" +
+              "big      — 10,000,000 leaked passwords<br><br>" +
+              "Usage:  crack tiny   |   crack big"
+            );
+          } else if (cmd.startsWith("crack")) {
+            if (!s.captured) { print("Capture a handshake first:  capture", "warn"); return; }
+            const list = cmd.split(/\s+/)[1];
+            if (list !== "tiny" && list !== "big") { print("Pick a list:  crack tiny  or  crack big", "warn"); return; }
+            const guesses = ["password", "12345678", "letmein", "qwerty123", "coffee123"];
+            for (const g of guesses) {
+              print(`trying "${g}" ...`, "sys");
+              await sleep(260);
+            }
+            await sleep(200);
+            print('KEY FOUND → passphrase: "coffee123"', "ok");
+            debrief([
+              "The passphrase was a dictionary word + number, so it appeared in",
+              "a common wordlist and fell in seconds. This is why offline",
+              "dictionary attacks on captured handshakes work.",
+              "",
+              "DEFEND:",
+              "• Use a 4–5 random-word passphrase (e.g. 'otter-maple-rivet-dune').",
+              "• Prefer WPA3, which resists offline cracking of the handshake.",
+              "• Never reuse a Wi-Fi password that's in any leaked list."
+            ]);
+            completeQuest("wifi", 120);
+          } else {
+            print("Commands here:  capture | wordlist | crack <list>", "warn");
+          }
+        };
+      }
+    },
+
+    // ---- 3. Phishing -----------------------------------------------------
+    {
+      id: "phish",
+      title: "Spot the Phish",
+      sub: "Read an inbox, flag the fake",
+      concept: "Social engineering / phishing red flags",
+      xp: 120,
+      requires: ["handshake"],
+      start: async () => {
+        await type([
+          "MISSION 03 — Spot the Phish",
+          "A (fictional) colleague forwarded their inbox. One message is a",
+          "phishing attempt. Find it.",
+          ""
+        ]);
+        const inbox = [
+          { from: "team@company.com", subj: "Lunch Friday?", body: "Pizza at 1pm, you in?" },
+          { from: "no-reply@paypaI-secure.com", subj: "⚠ Account suspended — verify NOW",
+            body: "Your acount has been limited. Click http://paypaI-secure.com/login within 24h to avoid closure. Enter your password and card to verify." },
+          { from: "git@github.com", subj: "New sign-in from Chrome", body: "If this was you, no action needed." },
+          { from: "hr@company.com", subj: "Benefits enrollment", body: "Portal opens Monday on the usual intranet link." }
+        ];
+        print("Commands:  read <1-4>   |   flag <1-4>", "hi");
+        state.handler = async (cmd) => {
+          const [c, nStr] = cmd.split(/\s+/);
+          const n = parseInt(nStr, 10);
+          if (c === "list") {
+            inbox.forEach((m, i) => print(`[${i + 1}] ${m.from}  —  ${m.subj}`, "sys"));
+          } else if (c === "read") {
+            const m = inbox[n - 1];
+            if (!m) { print("No such message. read 1–4", "warn"); return; }
+            printHTML(`<b>From:</b> ${esc(m.from)}<br><b>Subject:</b> ${esc(m.subj)}<br><br>${esc(m.body)}`);
+          } else if (c === "flag") {
+            if (n === 2) {
+              print("Correct — message 2 is the phish.", "ok");
+              debrief([
+                "Red flags in message 2:",
+                "• Look-alike domain: 'paypaI' uses a capital i, not an L.",
+                "• Urgency + threat ('suspended', '24h') to rush you.",
+                "• Spelling errors ('acount').",
+                "• Asks for password AND card over a link — real providers don't.",
+                "",
+                "DEFEND:",
+                "• Hover links; type known URLs yourself. Check the exact domain.",
+                "• Never enter credentials from an email link.",
+                "• Turn on 2FA so a stolen password alone isn't enough.",
+                "• Report suspected phish to your IT/security team."
+              ]);
+              completeQuest("phish", 120);
+            } else {
+              print("That one looks legit. Re-read the others — check the sender domains.", "warn");
+            }
+          } else {
+            print("Commands:  list | read <n> | flag <n>", "warn");
+          }
+        };
+        print("(type  list  to see the inbox)", "sys");
+      }
+    },
+
+    // ---- 4. Default creds / rate limiting --------------------------------
+    {
+      id: "login",
+      title: "Weak Sauce",
+      sub: "Default creds & account lockout",
+      concept: "Authentication, default passwords, rate limiting, 2FA",
+      xp: 150,
+      requires: ["wifi"],
+      _tries: 0,
+      start: async function () {
+        this._tries = 0;
+        await type([
+          "MISSION 04 — Weak Sauce",
+          "The simulated IoT camera at 10.0.0.5 shipped with factory default",
+          "credentials that were never changed. Get into its admin panel.",
+          ""
+        ]);
+        print("Try:  login <user> <password>   (hint: think factory defaults)", "hi");
+        const self = this;
+        state.handler = async (cmd) => {
+          const parts = cmd.split(/\s+/);
+          if (parts[0] !== "login") { print("Use:  login <user> <password>", "warn"); return; }
+          const user = parts[1], pass = parts[2];
+          if (self._tries >= 3) {
+            print("🔒 Account locked after 3 failed attempts. (That's the defense!)", "err");
+            debrief([
+              "You hit a lockout — exactly what a well-configured system does.",
+              "",
+              "DEFEND:",
+              "• Always change default credentials on any device.",
+              "• Rate-limit / lock accounts after a few failures.",
+              "• Require 2FA so a known password isn't enough.",
+              "• For the attacker side: this is why default-cred lists exist —",
+              "  and why 'just change the password' stops most of them cold.",
+              "",
+              "Resetting the sim lock so you can finish — type  login admin admin"
+            ]);
+            self._tries = 0;
+            return;
+          }
+          if ((user === "admin") && (pass === "admin" || pass === "password" || pass === "123456")) {
+            print("ACCESS GRANTED — welcome to iot-cam-01 admin panel.", "ok");
+            debrief([
+              "The device used a factory default password. Billions of IoT",
+              "devices ship this way; botnets like Mirai spread exactly like this.",
+              "",
+              "DEFEND:",
+              "• Change defaults on first boot; enforce strong unique passwords.",
+              "• Add rate limiting + lockout (you saw it trigger above).",
+              "• Put IoT gear on a segmented network; disable remote admin."
+            ]);
+            completeQuest("login", 150);
+          } else {
+            self._tries++;
+            print(`Login failed. (${self._tries}/3 attempts)`, "err");
+          }
+        };
+      }
+    },
+
+    // ---- 5. SQL injection ------------------------------------------------
+    {
+      id: "inject",
+      title: "Little Bobby Tables",
+      sub: "SQL injection in a toy shop",
+      concept: "Input validation, SQL injection, parameterized queries",
+      xp: 180,
+      requires: ["login"],
+      start: async () => {
+        await type([
+          "MISSION 05 — Little Bobby Tables",
+          "The simulated shop.local has a product search that drops your input",
+          "straight into a SQL query. See if you can make it reveal more than",
+          "products.",
+          ""
+        ]);
+        printHTML(
+          "Behind the scenes the app runs (vulnerably):<br>" +
+          '<span class="hi">SELECT * FROM products WHERE name = \'<i>[your input]</i>\'</span>'
+        );
+        print("Try a normal search first:  search mug", "hi");
+        print("Then try to break out of the string literal...", "sys");
+        state.handler = async (cmd) => {
+          if (!cmd.startsWith("search")) { print("Use:  search <text>", "warn"); return; }
+          const q = cmd.slice(6).trim();
+          const normalized = q.replace(/\s+/g, "").toLowerCase();
+          if (normalized.includes("'or'1'='1") || normalized.includes("or1=1")) {
+            await type(["executing query ...", "WHERE name = '' OR '1'='1'  → always true"], "sys", 300);
+            printHTML(
+              "<b class='err'>Dumped entire users table (simulated):</b><br>" +
+              "id | user  | email            | pw_hash<br>" +
+              "1  | maya  | maya@cafe.test   | $2b$…<br>" +
+              "2  | admin | admin@shop.local | $2b$…"
+            );
+            debrief([
+              "Your input closed the quote and injected  OR '1'='1'  — always",
+              "true — so the query returned every row. This is SQL injection,",
+              "still one of the most common web vulnerabilities.",
+              "",
+              "DEFEND:",
+              "• Use parameterized queries / prepared statements — NEVER string",
+              "  concatenation with user input.",
+              "• Validate & escape input; apply least-privilege DB accounts.",
+              "• Use an ORM or query builder that parameterizes by default."
+            ]);
+            completeQuest("inject", 180);
+          } else {
+            print(`results for "${q}": coffee ${esc(q)} mug, ${esc(q)} sticker`, "sys");
+            print("(normal search works. now think about a single quote: '  )", "sys");
+          }
+        };
+      }
+    },
+
+    // ---- 6. Crypto -------------------------------------------------------
+    {
+      id: "crypto",
+      title: "Caesar's Secret",
+      sub: "Break a classical cipher",
+      concept: "Cryptography basics, brute force, why modern crypto matters",
+      xp: 160,
+      requires: ["inject"],
+      start: async () => {
+        const plain = "ACCESS GRANTED CYBER GUARDIAN";
+        const shift = 7;
+        const enc = plain.replace(/[A-Z]/g, (ch) =>
+          String.fromCharCode(((ch.charCodeAt(0) - 65 + shift) % 26) + 65));
+        await type([
+          "MISSION 06 — Caesar's Secret",
+          "You intercepted an (in-game) message encrypted with a Caesar cipher,",
+          "which just shifts each letter by a fixed amount. Recover the text.",
+          ""
+        ]);
+        printHTML(`<b>Ciphertext:</b> <span class="hi">${esc(enc)}</span>`);
+        print("Commands:  decode <shift 1-25>   |   brute   (tries all shifts)", "hi");
+        state.handler = async (cmd) => {
+          const [c, arg] = cmd.split(/\s+/);
+          const dec = (sh) => enc.replace(/[A-Z]/g, (ch) =>
+            String.fromCharCode(((ch.charCodeAt(0) - 65 - sh + 26) % 26) + 65));
+          if (c === "brute") {
+            for (let sh = 1; sh <= 25; sh++) { print(`shift ${String(sh).padStart(2)}: ${dec(sh)}`, "sys"); }
+            print(`Readable at shift ${shift}. Now run:  decode ${shift}`, "hi");
+          } else if (c === "decode") {
+            const sh = parseInt(arg, 10);
+            if (!(sh >= 1 && sh <= 25)) { print("decode <number 1-25>", "warn"); return; }
+            const out = dec(sh);
+            print(`→ ${out}`, out === plain ? "ok" : "sys");
+            if (out === plain) {
+              debrief([
+                "Solved. A Caesar cipher has only 25 possible keys, so brute",
+                "force cracks it instantly — that's why it's a historical toy.",
+                "",
+                "REAL CRYPTO:",
+                "• Modern ciphers (AES) have key spaces too vast to brute force.",
+                "• Never invent your own crypto; use vetted libraries.",
+                "• Encryption ≠ integrity — also authenticate (e.g. AES-GCM)."
+              ]);
+              completeQuest("crypto", 160);
+            }
+          } else {
+            print("Commands:  decode <n> | brute", "warn");
+          }
+        };
+      }
+    }
+  ];
+
+  function debrief(lines) {
+    const html = "<span class='h'>🛡️ DEBRIEF — how to defend</span><br>" +
+      lines.map((l) => esc(l) || "&nbsp;").join("<br>");
+    printHTML(html, "box debrief");
+  }
+
+  // ---------- global command router ----------
+  async function runCommand(raw) {
+    const cmd = raw.trim();
+    if (!cmd) return;
+    echo(cmd);
+
+    const lower = cmd.toLowerCase();
+
+    // global commands always available
+    if (lower === "help" || lower === "?") return showHelp();
+    if (lower === "clear" || lower === "cls") { term.innerHTML = ""; return; }
+    if (lower === "missions" || lower === "quests" || lower === "ls") return listMissions();
+    if (lower === "status" || lower === "whoami") return showStatus();
+    if (lower === "about" || lower === "safety") return showAbout();
+    if (lower === "scan" && !state.active) { // allow lobby re-scan
+      return QUESTS[0].start.call(QUESTS[0]);
+    }
+    if (lower.startsWith("accept ") || lower.startsWith("start ")) {
+      const id = cmd.split(/\s+/)[1];
+      return startQuest(id);
+    }
+    if (lower === "abort" || lower === "exit") {
+      if (state.active) { print(`Aborted "${state.active}". Back in the lobby.`, "warn"); state.active = null; state.handler = null; setPrompt("guest@cipherquest:~$"); }
+      else print("Nothing to abort.", "sys");
+      return;
+    }
+
+    // route to active quest
+    if (state.handler) return state.handler(lower);
+
+    print(`Unknown command: ${cmd}`, "err");
+    print("Type  help  for commands, or  missions  to see quests.", "sys");
+  }
+
+  function startQuest(id) {
+    const q = QUESTS.find((x) => x.id === id);
+    if (!q) { print(`No mission "${id}". Type  missions.`, "err"); return; }
+    if (state.completed.has(id)) { print(`"${q.title}" already complete. Replaying.`, "sys"); }
+    if (!isUnlocked(q)) { print(`"${q.title}" is locked. Finish: ${q.requires.join(", ")}`, "warn"); return; }
+    state.active = id;
+    state.handler = null;
+    setPrompt(`agent@${id}:~<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CipherQuest</title>
+  <style>
+:root {
+  --bg: #0a0e14;
+  --panel: #0f1621;
+  --panel-2: #131c2b;
+  --line: #1e2b3f;
+  --text: #c6d4e6;
+  --dim: #6b7f99;
+  --green: #4ee07a;
+  --cyan: #4bd6e0;
+  --amber: #f2c14e;
+  --red: #f26d6d;
+  --accent: #7aa2ff;
+  --mono: "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  overflow: hidden;
+  user-select: none;
+}
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* top bar */
+#topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #0f1826, #0b1119);
+  border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 700; letter-spacing: .5px; }
+.brand .logo { color: var(--green); }
+.brand .tag { color: var(--dim); font-weight: 400; margin-left: 6px; font-size: 12px; }
+.stats { display: flex; gap: 18px; font-size: 12px; color: var(--dim); }
+.stats b { color: var(--cyan); }
+
+/* layout */
+#main { flex: 1; display: flex; min-height: 0; }
+
+#sidebar {
+  width: 290px; flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 14px;
+  overflow-y: auto;
+}
+.panel-title { color: var(--dim); font-size: 11px; letter-spacing: 2px; margin-bottom: 10px; }
+#quest-list { list-style: none; margin: 0; padding: 0; }
+#quest-list li {
+  padding: 10px 11px; margin-bottom: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+#quest-list li:hover { border-left-color: var(--accent); background: #16202f; }
+#quest-list li.done { border-left-color: var(--green); opacity: .7; }
+#quest-list li.locked { opacity: .4; cursor: not-allowed; }
+#quest-list li .q-title { font-size: 13px; font-weight: 600; }
+#quest-list li .q-sub { font-size: 11px; color: var(--dim); margin-top: 3px; }
+#quest-list li .q-badge { float: right; font-size: 11px; color: var(--amber); }
+#quest-list li.done .q-badge { color: var(--green); }
+
+.sandbox-note {
+  margin-top: 16px; padding: 11px;
+  font-size: 11px; line-height: 1.5; color: var(--dim);
+  background: #0c141e; border: 1px dashed var(--line); border-radius: 6px;
+}
+.sandbox-note b { color: var(--text); }
+
+/* terminal */
+#terminal-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#terminal {
+  flex: 1; overflow-y: auto; padding: 16px 18px;
+  line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+  user-select: text;
+}
+#terminal .l { margin: 0; }
+#terminal .sys { color: var(--dim); }
+#terminal .ok { color: var(--green); }
+#terminal .warn { color: var(--amber); }
+#terminal .err { color: var(--red); }
+#terminal .hi { color: var(--cyan); }
+#terminal .accent { color: var(--accent); }
+#terminal .you { color: var(--text); }
+#terminal .you::before { content: "› "; color: var(--green); }
+#terminal .box {
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 12px; margin: 6px 0; background: #0c141e;
+}
+#terminal .debrief { border-color: #2a4a5a; background: #0b1a20; }
+#terminal .debrief .h { color: var(--cyan); font-weight: 700; }
+
+#input-line {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 16px; border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.prompt { color: var(--green); white-space: nowrap; }
+#cmd {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--text); font-family: var(--mono); font-size: 14px;
+  user-select: text;
+}
+#cmd::placeholder { color: var(--dim); }
+
+/* scrollbars */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: #1d2a3d; border-radius: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.blink { animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+</style>
+</head>
+<body>
+  <div id="app">
+    <header id="topbar">
+      <div class="brand">
+        <span class="logo">◈</span> CipherQuest
+        <span class="tag">// training simulation</span>
+      </div>
+      <div class="stats">
+        <span class="stat">RANK <b id="rank">Script Kiddie</b></span>
+        <span class="stat">XP <b id="xp">0</b></span>
+        <span class="stat">QUESTS <b id="done">0</b>/<span id="total">0</span></span>
+      </div>
+    </header>
+
+    <main id="main">
+      <aside id="sidebar">
+        <div class="panel-title">MISSIONS</div>
+        <ul id="quest-list"></ul>
+        <div class="sandbox-note">
+          🛡️ Everything here is a <b>simulation</b>. No real networks,
+          devices, or accounts exist in this game. Every target is fictional
+          and runs entirely on your machine.
+        </div>
+      </aside>
+
+      <section id="terminal-wrap">
+        <div id="terminal" aria-live="polite"></div>
+        <form id="input-line" autocomplete="off">
+          <span class="prompt" id="prompt-label">guest@cipherquest:~$</span>
+          <input id="cmd" type="text" spellcheck="false"
+                 autocapitalize="off" autocomplete="off" placeholder="type 'help' to begin" />
+        </form>
+      </section>
+    </main>
+  </div>
+  );
+    q.start.call(q);
+  }
+
+  function listMissions() {
+    print("AVAILABLE MISSIONS:", "hi");
+    QUESTS.forEach((q, i) => {
+      const tag = state.completed.has(q.id) ? "[✔]" : isUnlocked(q) ? "[ ]" : "[🔒]";
+      print(`${tag} ${q.id.padEnd(10)} ${q.title}  (${q.xp}xp) — ${q.concept}`, "sys");
+    });
+    print("Start one with:  accept <id>   (e.g. accept wifi)", "hi");
+  }
+
+  function showStatus() {
+    print(`Operator: guest`, "sys");
+    print(`Rank: ${rankFor(state.xp)}   XP: ${state.xp}`, "hi");
+    print(`Missions complete: ${state.completed.size}/${QUESTS.length}`, "sys");
+  }
+
+  function showHelp() {
+    printHTML(
+      "<b>GLOBAL COMMANDS</b><br>" +
+      "help .............. this list<br>" +
+      "missions .......... list all quests & status<br>" +
+      "accept &lt;id&gt; ....... start a mission (or click it in the sidebar)<br>" +
+      "scan .............. re-map the practice lab<br>" +
+      "status ............ your rank &amp; XP<br>" +
+      "about / safety .... what this game is (and isn't)<br>" +
+      "abort ............. leave the current mission<br>" +
+      "clear ............. clear the screen<br><br>" +
+      "Inside a mission, type the step commands it shows you."
+    );
+  }
+
+  function showAbout() {
+    printHTML(
+      "<b>CipherQuest — training simulation</b><br>" +
+      "This is a game. Every network, inbox, server, and account here is " +
+      "<b>fictional data generated on your own machine</b>. Nothing connects " +
+      "to the internet or to any real system.<br><br>" +
+      "The goal is to teach how common attacks work <b>so you can defend " +
+      "against them</b> — the same idea behind picoCTF, TryHackMe, and " +
+      "OverTheWire.<br><br>" +
+      "<b class='warn'>In the real world:</b> only ever test systems you own " +
+      "or have explicit written permission to test. Unauthorized access is " +
+      "illegal. Use these skills to protect people, not to harm them."
+    );
+  }
+
+  // ---------- input wiring ----------
+  const history = [];
+  let hIdx = -1;
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = input.value;
+    if (v.trim()) { history.push(v); hIdx = history.length; }
+    input.value = "";
+    runCommand(v);
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp") { if (hIdx > 0) { hIdx--; input.value = history[hIdx]; } e.preventDefault(); }
+    else if (e.key === "ArrowDown") { if (hIdx < history.length - 1) { hIdx++; input.value = history[hIdx]; } else { hIdx = history.length; input.value = ""; } e.preventDefault(); }
+  });
+  document.addEventListener("click", () => input.focus());
+
+  // ---------- boot ----------
+  async function boot() {
+    renderQuests();
+    await type([
+      "CipherQuest v1.0  —  cybersecurity training range",
+      "────────────────────────────────────────────────",
+    ], "ok", 120);
+    await type([
+      "All targets in this game are simulated. No real systems are touched.",
+      "You learn how attacks work — and how to stop them.",
+      ""
+    ], "sys", 120);
+    print("Type  help  to see commands, or  accept handshake  to begin.", "hi");
+    print("");
+    input.focus();
+  }
+
+  boot();
+})();
+
+</script>
+</body>
+</html>
