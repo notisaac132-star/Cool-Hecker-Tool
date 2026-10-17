@@ -15,6 +15,8 @@ against them. Think *Hacknet* meets *picoCTF*.
 
 That link always points to the newest release. Pick the file for your system:
 
+📖 **New to this? Follow the [step-by-step Install Guide](INSTALL.md).**
+
 | Platform | File | How to install |
 |----------|------|----------------|
 | **macOS** | `CipherQuest-<version>-arm64.dmg` (Apple Silicon) or `-x64.dmg` (Intel) | Open the `.dmg`, drag **CipherQuest** to Applications |

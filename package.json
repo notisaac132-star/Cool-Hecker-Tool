@@ -45,6 +45,9 @@
       "allowToChangeInstallationDirectory": true,
       "artifactName": "CipherQuest-Setup-${version}.${ext}"
     },
+    "portable": {
+      "artifactName": "CipherQuest-Portable-${version}.${ext}"
+    },
     "mac": {
       "icon": "build/icon.png",
       "target": [
