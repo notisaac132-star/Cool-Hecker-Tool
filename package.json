@@ -51,10 +51,10 @@
     "mac": {
       "icon": "build/icon.png",
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        { "target": "dmg", "arch": ["universal"] }
       ],
       "category": "public.app-category.education",
-      "artifactName": "CipherQuest-${version}-${arch}.${ext}",
+      "artifactName": "CipherQuest-${version}.${ext}",
       "identity": null
     },
     "dmg": {
