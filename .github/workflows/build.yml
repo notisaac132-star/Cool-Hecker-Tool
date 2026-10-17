@@ -45,6 +45,8 @@ jobs:
       - name: Build (${{ matrix.platform }})
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # No paid signing certs yet — don't attempt macOS code signing in CI.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
         # Publishes the installers to a GitHub Release automatically.
         run: npx electron-builder --${{ matrix.platform }} --publish always
 

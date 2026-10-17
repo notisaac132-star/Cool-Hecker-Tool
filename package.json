@@ -54,7 +54,8 @@
         { "target": "dmg", "arch": ["x64", "arm64"] }
       ],
       "category": "public.app-category.education",
-      "artifactName": "CipherQuest-${version}-${arch}.${ext}"
+      "artifactName": "CipherQuest-${version}-${arch}.${ext}",
+      "identity": null
     },
     "dmg": {
       "title": "CipherQuest ${version}"
