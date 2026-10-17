@@ -11,7 +11,9 @@ against them. Think *Hacknet* meets *picoCTF*.
 
 ## ⬇️ Download (Mac & Windows)
 
-Grab the latest installer from the **[Releases page](https://github.com/notisaac132-star/cool-hecker-tool/releases)**:
+### 👉 [**Download the latest installer**](https://github.com/notisaac132-star/Cool-Hecker-Tool/releases/latest)
+
+That link always points to the newest release. Pick the file for your system:
 
 | Platform | File | How to install |
 |----------|------|----------------|
@@ -19,7 +21,9 @@ Grab the latest installer from the **[Releases page](https://github.com/notisaac
 | **Windows** | `CipherQuest-Setup-<version>.exe` | Run the installer and follow the prompts |
 | **Windows (no install)** | `CipherQuest-<version>.exe` (portable) | Just double-click it |
 
-No release yet? See **[Releasing / building installers](#releasing--building-installers)** below — the binaries are produced automatically by CI.
+The installers are **built and published automatically** by GitHub Actions
+every time `main` updates — no manual steps. (First build takes a few minutes
+after a push; check the **Actions** tab for progress.)
 
 > **First-launch note:** the apps aren't code-signed yet, so the OS may warn
 > you're opening an app from an "unidentified developer." On macOS: right-click →
@@ -61,19 +65,12 @@ This repo ships a **GitHub Actions** workflow (`.github/workflows/build.yml`)
 that builds the real installers on native runners — macOS for the `.dmg`,
 Windows for the `.exe` — so you never have to own both machines.
 
-**To publish a downloadable release:**
-```bash
-# bump the version in package.json first if you like, then:
-git tag v1.0.0
-git push origin v1.0.0
-```
-CI builds the `.dmg` + Windows installers and attaches them to a new GitHub
-Release automatically. They then show up on the Releases page for anyone to
-download.
+**It runs automatically on every push to `main`** and publishes the `.dmg` +
+Windows installers to the [latest release](https://github.com/notisaac132-star/Cool-Hecker-Tool/releases/latest).
+You don't have to do anything to get installers — just push your changes.
 
-**To just get the installers without a release:** go to the repo's **Actions**
-tab → **Build installers** → **Run workflow**. The files are uploaded as
-downloadable build artifacts.
+**To ship a new version:** bump `"version"` in `package.json`, commit, and push
+to `main`. The new build replaces the release assets.
 
 **To build locally** (produces only your current OS's format):
 ```bash

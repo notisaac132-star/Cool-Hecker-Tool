@@ -55,6 +55,14 @@
     },
     "dmg": {
       "title": "CipherQuest ${version}"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "notisaac132-star",
+        "repo": "Cool-Hecker-Tool",
+        "releaseType": "release"
+      }
+    ]
   }
 }
