@@ -19,7 +19,7 @@ That link always points to the newest release. Pick the file for your system:
 
 | Platform | File | How to install |
 |----------|------|----------------|
-| **macOS** | `CipherQuest-<version>-arm64.dmg` (Apple Silicon) or `-x64.dmg` (Intel) | Open the `.dmg`, drag **CipherQuest** to Applications |
+| **macOS** | `CipherQuest-<version>.dmg` (universal — any Mac) | Open the `.dmg`, drag **CipherQuest** to Applications |
 | **Windows** | `CipherQuest-Setup-<version>.exe` | Run the installer and follow the prompts |
 | **Windows (no install)** | `CipherQuest-<version>.exe` (portable) | Just double-click it |
 

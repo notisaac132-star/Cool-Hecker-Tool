@@ -22,11 +22,11 @@ Under **Assets**, download the file for your computer:
 |---------------|------------------|
 | 🪟 **Windows** (most people) | `CipherQuest-Setup-1.0.0.exe` |
 | 🪟 **Windows**, no install (run from a USB stick etc.) | `CipherQuest-Portable-1.0.0.exe` |
-| 🍎 **Mac** with Apple chip (M1/M2/M3/M4) | `CipherQuest-1.0.0-arm64.dmg` |
-| 🍎 **Mac** with Intel chip | `CipherQuest-1.0.0-x64.dmg` |
+| 🍎 **Mac** (any Mac — Intel *or* Apple Silicon) | `CipherQuest-1.0.0.dmg` |
 
-> Not sure which Mac you have? Click the  Apple menu → **About This Mac**. If it
-> says "Apple M1/M2/M3…" pick **arm64**. If it says "Intel" pick **x64**.
+> The Mac file is **universal** — the one `CipherQuest-1.0.0.dmg` works on every
+> Mac, so you don't need to know which chip you have. (If you also see an older
+> `-arm64.dmg` file, you can ignore it; the plain `.dmg` is the one to grab.)
 
 ---
 
